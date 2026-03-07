@@ -6,7 +6,7 @@ A web service that identifies and links customer contacts across multiple purcha
 
 >Here is the URL with endpoint
 ```
-POST https://deployed_url/identify
+POST https://https://identity-reconciliation-backend-c1nt.onrender.com/identify
 ```
 
 ---
