@@ -1,0 +1,193 @@
+{
+  "info": {
+    "name": "Bitespeed Identity Reconciliation",
+    "description": "Test collection for the /identify endpoint covering all cases from the spec.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "description": "Change to your deployed URL for production testing"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/",
+        "description": "Verify the service is running."
+      }
+    },
+    {
+      "name": "1. New Contact (Brand New Email + Phone)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identify",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"lorraine@hillvalley.edu\",\n  \"phoneNumber\": \"123456\"\n}"
+        },
+        "description": "Creates a brand new primary contact. Expect secondaryContactIds: []"
+      }
+    },
+    {
+      "name": "2. Existing Contact — Exact Match",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identify",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"lorraine@hillvalley.edu\",\n  \"phoneNumber\": \"123456\"\n}"
+        },
+        "description": "Exact same data as existing contact. No new rows created."
+      }
+    },
+    {
+      "name": "3. New Email, Same Phone → Creates Secondary",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identify",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"mcfly@hillvalley.edu\",\n  \"phoneNumber\": \"123456\"\n}"
+        },
+        "description": "Phone matches existing contact but email is new. Creates secondary. Response should have primaryContatctId of the first contact."
+      }
+    },
+    {
+      "name": "4. Lookup by Phone Only",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identify",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": null,\n  \"phoneNumber\": \"123456\"\n}"
+        },
+        "description": "Only phone provided. Should return existing consolidated contact."
+      }
+    },
+    {
+      "name": "5. Lookup by Primary Email Only",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identify",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"lorraine@hillvalley.edu\",\n  \"phoneNumber\": null\n}"
+        },
+        "description": "Only primary email provided. Should return consolidated contact."
+      }
+    },
+    {
+      "name": "6. Lookup by Secondary Email Only",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identify",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"mcfly@hillvalley.edu\",\n  \"phoneNumber\": null\n}"
+        },
+        "description": "Only secondary email provided. Should still return consolidated contact with correct primary."
+      }
+    },
+    {
+      "name": "7. Create Second Isolated Primary",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identify",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"george@hillvalley.edu\",\n  \"phoneNumber\": \"919191\"\n}"
+        },
+        "description": "Creates a completely separate primary contact (no relation to previous ones)."
+      }
+    },
+    {
+      "name": "8. Create Third Isolated Primary",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identify",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"biffsucks@hillvalley.edu\",\n  \"phoneNumber\": \"717171\"\n}"
+        },
+        "description": "Creates another separate primary contact."
+      }
+    },
+    {
+      "name": "9. Merge Two Primaries (Primary → Secondary)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identify",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"george@hillvalley.edu\",\n  \"phoneNumber\": \"717171\"\n}"
+        },
+        "description": "Email matches george's contact, phone matches biff's contact. The OLDER primary (george) should survive. The newer (biff) becomes secondary. Response should list both emails and phones."
+      }
+    },
+    {
+      "name": "10. Phone Number Only — New Contact",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identify",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phoneNumber\": \"999999\"\n}"
+        },
+        "description": "Only phoneNumber provided (no email key). Should create a new primary contact."
+      }
+    },
+    {
+      "name": "11. Email Only — New Contact",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identify",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"newperson@example.com\"\n}"
+        },
+        "description": "Only email provided (no phoneNumber key). Should create a new primary contact."
+      }
+    },
+    {
+      "name": "12. Error — Both Null",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identify",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": null,\n  \"phoneNumber\": null\n}"
+        },
+        "description": "Should return 400 Bad Request."
+      }
+    },
+    {
+      "name": "13. Error — Empty Body",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/identify",
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "description": "Should return 400 Bad Request."
+      }
+    }
+  ]
+}
